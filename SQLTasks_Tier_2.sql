@@ -84,10 +84,10 @@ formatted as a single column. Ensure no duplicate data, and order by
 the member name. */
 SELECT DISTINCT sub.name facility, concat(m.firstname, ' ',m.surname) as member   
 FROM ( SELECT f.name, f.facid
-    FROM Bookings b 
-    INNER JOIN Facilities f 
+    FROM Bookings as b 
+    INNER JOIN Facilities as f 
     ON b.facid = f.facid ) sub
-JOIN Members m
+JOIN Members as m
 WHERE sub.name LIKE 'Tennis%'
 ORDER BY member;
 
@@ -97,11 +97,46 @@ different costs to members (the listed costs are per half-hour 'slot'), and
 the guest user's ID is always 0. Include in your output the name of the
 facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
+WITH mem_bookings  
+AS (
+    SELECT f.name as facility, b.facid, b.memid, concat(m.firstname, ' ',m.surname) as member, membercost 
+    FROM Bookings as b 
+    JOIN Members as  m 
+    USING (memid)
+    JOIN Facilities as f 
+    ON b.facid = f.facid 
+    WHERE membercost > 30),
+guest_bookings 
+AS (
+    SELECT f.name as facility, b.facid, b.memid, firstname as member, guestcost  
+    FROM Bookings as  b 
+    JOIN Members as  m 
+    USING (memid)
+    JOIN Facilities as f 
+    ON b.facid = f.facid 
+    WHERE memid = 0 and guestcost > 30)
 
+
+SELECT f.name as facility, mem.member, guest.member, guestcost, membercost 
+FROM mem_bookings as mem
+INNER JOIN guest_bookings as guest 
+ON mem.member = guest.member
+WHERE guestcost > 30 or membercost > 30;
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
-
+SELECT sub.facility, sub.member, sub.cost 
+FROM (
+    SELECT f.name as facility, concat(m.firstname, ' ', m.surname) as member, 
+    CASE WHEN m.memid = 0 THEN guestcost ELSE membercost END AS cost  
+    FROM Bookings b 
+    JOIN Facilities f 
+    ON b.facid = f.facid 
+    JOIN Members m 
+    ON b.memid = m.memid 
+     
+) as sub
+WHERE cost > 30;
 /* PART 2: SQLite
 
 Export the country club data from PHPMyAdmin, and connect to a local SQLite instance from Jupyter notebook 
