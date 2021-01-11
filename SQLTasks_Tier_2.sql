@@ -99,44 +99,40 @@ facility, the name of the member formatted as a single column, and the cost.
 Order by descending cost, and do not use any subqueries. */
 WITH mem_bookings  
 AS (
-    SELECT f.name as facility, b.facid, b.memid, concat(m.firstname, ' ',m.surname) as member, membercost 
+    SELECT DISTINCT f.name as facility, concat(m.firstname, ' ',m.surname) as member, 
+        CASE WHEN memid != 0 THEN membercost * slots 
+        ELSE guestcost * slots END as cost 
     FROM Bookings as b 
     JOIN Members as  m 
     USING (memid)
     JOIN Facilities as f 
-    ON b.facid = f.facid 
-    WHERE membercost > 30),
-guest_bookings 
-AS (
-    SELECT f.name as facility, b.facid, b.memid, firstname as member, guestcost  
-    FROM Bookings as  b 
-    JOIN Members as  m 
-    USING (memid)
-    JOIN Facilities as f 
-    ON b.facid = f.facid 
-    WHERE memid = 0 and guestcost > 30)
+    USING (facid)
+    WHERE starttime LIKE '2012-09-14%' and membercost * slots > 30 or guestcost * slots > 30)
 
 
-SELECT f.name as facility, mem.member, guest.member, guestcost, membercost 
+
+SELECT facility, member, cost
 FROM mem_bookings as mem
 INNER JOIN guest_bookings as guest 
 ON mem.member = guest.member
-WHERE guestcost > 30 or membercost > 30;
+WHERE starttime LIKE '2012-09-14%' and cost > 30;
 
 /* Q9: This time, produce the same result as in Q8, but using a subquery. */
 
 SELECT sub.facility, sub.member, sub.cost 
 FROM (
-    SELECT f.name as facility, concat(m.firstname, ' ', m.surname) as member, 
-    CASE WHEN m.memid = 0 THEN guestcost ELSE membercost END AS cost  
-    FROM Bookings b 
-    JOIN Facilities f 
-    ON b.facid = f.facid 
-    JOIN Members m 
-    ON b.memid = m.memid 
+    SELECT DISTINCT f.name as facility, starttime, concat(m.firstname, ' ',m.surname) as member, 
+        CASE WHEN memid != 0 THEN membercost * slots 
+        ELSE guestcost * slots END as cost 
+    FROM Bookings as b 
+    JOIN Members as  m 
+    USING (memid)
+    JOIN Facilities as f 
+    USING (facid)
+    WHERE starttime LIKE '2012-09-14%' and membercost * slots > 30 or guestcost * slots > 30 
      
 ) as sub
-WHERE cost > 30;
+WHERE starttime LIKE '2012-09-14%' and sub.cost > 30;
 /* PART 2: SQLite
 
 Export the country club data from PHPMyAdmin, and connect to a local SQLite instance from Jupyter notebook 
@@ -146,7 +142,9 @@ QUESTIONS:
 /* Q10: Produce a list of facilities with a total revenue less than 1000.
 The output of facility name and total revenue, sorted by revenue. Remember
 that there's a different cost for guests and members! */
-
+SELECT f.name, cost 
+FROM Facilities f 
+JOIN 
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
 
 
