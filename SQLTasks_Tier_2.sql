@@ -147,7 +147,12 @@ FROM Bookings as b
 JOIN Facilities as f 
 USING (facid);
 /* Q11: Produce a report of members and who recommended them in alphabetic surname,firstname order */
-
+SELECT concat(m.firstname,' ',m.surname) as Recommended_By,
+concat(rcmd.firstname,' ',rcmd.surname) as Member
+FROM Members m
+inner join Members rcmd on rcmd.recommendedby = m.memid
+WHERE m.memid > 0 
+order by m.surname,m.firstname,rcmd.surname,rcmd.surname;
 
 /* Q12: Find the facilities with their usage by member, but not guests */
 SELECT f.name as facility, surname, firstname, slots  
